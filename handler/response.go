@@ -27,7 +27,7 @@ func sendError(ctx *gin.Context, code int, detail string) {
 	})
 }
 
-func sendErrorParams(ctx *gin.Context, code int, errorsParams []ErrorsParam) {
+func sendErrorParams(ctx *gin.Context, code int, errorsParams *[]ErrorsParam) {
 	lang, _ := ctx.Get("Accept-Language")
 	title := message.GetMessage(fmt.Sprint(lang), fmt.Sprint(code), )
 
