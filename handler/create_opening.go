@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/JulioZittei/goportunities/error"
 	"github.com/JulioZittei/goportunities/message"
 	"github.com/JulioZittei/goportunities/schema"
 	"github.com/gin-gonic/gin"
@@ -16,8 +17,14 @@ func CreateOpeningHandler(ctx *gin.Context) {
 	request := CreateOpeningRequest{}
 	lang, _ := ctx.Get("Accept-Language")
 
-
-	ctx.BindJSON(&request)
+	if err := ctx.BindJSON(&request); err != nil {
+		err := &error.BindJSONError{
+			Code: http.StatusBadRequest,
+			Context: ctx,
+		}
+		sendError(ctx, err.Code, err.Error())
+		return
+	}
 
 	if err := validate.Struct(request); err != nil {
 		logger.Errorf("validation error: %v", err.Error())
@@ -38,7 +45,7 @@ func CreateOpeningHandler(ctx *gin.Context) {
 			errorParams = append(errorParams, errorParam)
 		}
 
-		sendErrorParams(ctx, http.StatusUnprocessableEntity, errorParams)
+		sendErrorParams(ctx, http.StatusUnprocessableEntity, &errorParams)
 	}
 
 	opening := schema.Opening{
@@ -52,7 +59,13 @@ func CreateOpeningHandler(ctx *gin.Context) {
 
 	if err := db.Create(&opening).Error; err != nil {
 		logger.Errorf("error creating opening: %v", err)
-		sendError(ctx, http.StatusInternalServerError, "Error while creating opening on database")
+
+		err := &error.CreateOpeningError{
+			Code: http.StatusInternalServerError,
+			Context: ctx,
+		}
+
+		sendError(ctx, err.Code, err.Error())
 		return
 	}
 
